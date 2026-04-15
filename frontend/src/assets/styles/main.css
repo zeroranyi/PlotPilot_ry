@@ -1,0 +1,192 @@
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  /* 优化文本渲染 */
+  text-rendering: optimizeLegibility;
+}
+
+body {
+  font-family:
+    'Inter',
+    'Noto Sans SC',
+    'PingFang SC',
+    'Hiragino Sans GB',
+    'Microsoft YaHei',
+    'Source Han Sans CN',
+    system-ui,
+    -apple-system,
+    BlinkMacSystemFont,
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: var(--app-page-bg, #f4f6fb);
+  color: #1e293b;
+  min-height: 100vh;
+  /* 优化中文排版 */
+  font-variant-ligatures: common-ligatures;
+  text-size-adjust: 100%;
+  line-height: 1.6;
+}
+
+:root {
+  --app-page-bg: #eef1f6;
+  --app-surface: #ffffff;
+  --app-muted: #64748b;
+  --app-border: rgba(15, 23, 42, 0.09);
+  --app-shadow: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --app-shadow-hover: 0 8px 28px rgba(15, 23, 42, 0.08);
+  --app-radius-lg: 14px;
+  --app-radius-md: 10px;
+  --app-transition: 0.18s cubic-bezier(0.4, 0, 0.2, 1);
+  --aitext-split-border: rgba(15, 23, 42, 0.07);
+  --aitext-panel-muted: #f8fafc;
+  
+  /* 字体变量 */
+  --font-sans: 'Inter', 'Noto Sans SC', 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', system-ui, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Fira Code', 'SF Mono', 'Consolas', 'Liberation Mono', monospace;
+  --font-serif: 'Noto Serif SC', 'Source Han Serif CN', 'Songti SC', Georgia, serif;
+}
+
+/* 工作台 / 侧栏共用 */
+.aitext-panel-surface {
+  background: var(--aitext-panel-muted);
+  border-left: 1px solid var(--aitext-split-border);
+}
+
+.aitext-panel-title {
+  font-size: 14px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  color: #0f172a;
+  margin: 0 0 8px;
+}
+
+.aitext-panel-desc {
+  font-size: 12px;
+  line-height: 1.5;
+  color: var(--app-muted);
+  margin-bottom: 12px;
+}
+
+.aitext-composer-hint {
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--app-muted);
+}
+
+/* Markdown 正文（工作台气泡内） */
+.md-body {
+  font-family: var(--font-sans);
+  font-size: 14px;
+  line-height: 1.75;
+  letter-spacing: 0.01em;
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+.md-body p {
+  margin: 0 0 0.65em;
+}
+.md-body p:last-child {
+  margin-bottom: 0;
+}
+.md-body pre,
+.md-body code {
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+}
+.md-body pre {
+  padding: 12px 14px;
+  border-radius: 8px;
+  overflow-x: auto;
+  background: rgba(15, 23, 42, 0.06);
+  margin: 0.5em 0;
+}
+.md-body code {
+  padding: 0.15em 0.4em;
+  border-radius: 4px;
+  background: rgba(79, 70, 229, 0.08);
+}
+.md-body pre code {
+  padding: 0;
+  background: none;
+}
+.md-body ul,
+.md-body ol {
+  margin: 0.4em 0 0.6em 1.25em;
+}
+.md-body blockquote {
+  margin: 0.5em 0;
+  padding-left: 12px;
+  border-left: 3px solid rgba(79, 70, 229, 0.35);
+  color: var(--app-muted);
+}
+
+/* 标题优化 */
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-sans);
+  font-weight: 600;
+  line-height: 1.4;
+  color: #0f172a;
+}
+
+/* 小说正文阅读模式 */
+.novel-content {
+  font-family: var(--font-serif);
+  font-size: 16px;
+  line-height: 1.9;
+  letter-spacing: 0.02em;
+  text-align: justify;
+}
+
+.novel-content p {
+  text-indent: 2em;
+  margin-bottom: 0.8em;
+}
+
+.novel-content p:first-child {
+  text-indent: 0;
+}
+
+/* 代码块优化 */
+.code-block,
+pre[class*="language-"] {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  tab-size: 2;
+}
+
+/* 输入框优化 */
+input,
+textarea,
+select {
+  font-family: inherit;
+  font-size: inherit;
+}
+
+/* 按钮优化 */
+button {
+  font-family: inherit;
+}
+
+/* 数字/数据展示 */
+.numeric,
+.data-value {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* 拼音/注音支持 */
+ruby {
+  ruby-align: center;
+}
+
+rt {
+  font-size: 0.6em;
+  color: var(--app-muted);
+}

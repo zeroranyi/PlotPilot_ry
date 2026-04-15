@@ -1,0 +1,266 @@
+{
+  "60": {
+    "skill_id": "conflict_escalation-novel-1776261925153-60",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.5,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-060-skill.md"
+  },
+  "61": {
+    "skill_id": "conflict_escalation-novel-1776261925153-61",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.0,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-061-skill.md"
+  },
+  "62": {
+    "skill_id": "conflict_escalation-novel-1776261925153-62",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.3,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-062-skill.md"
+  },
+  "63": {
+    "skill_id": "conflict_escalation-novel-1776261925153-63",
+    "scene_type": "conflict_escalation",
+    "tension_score": 8.1,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-063-skill.md"
+  },
+  "64": {
+    "skill_id": "conflict_escalation-novel-1776261925153-64",
+    "scene_type": "conflict_escalation",
+    "tension_score": 7.8,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-064-skill.md"
+  },
+  "65": {
+    "skill_id": "conflict_escalation-novel-1776261925153-65",
+    "scene_type": "conflict_escalation",
+    "tension_score": 6.0,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-065-skill.md"
+  },
+  "66": {
+    "skill_id": "daily_transition-novel-1776261925153-66",
+    "scene_type": "daily_transition",
+    "tension_score": 4.8,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-066-skill.md"
+  },
+  "67": {
+    "skill_id": "conflict_escalation-novel-1776261925153-67",
+    "scene_type": "conflict_escalation",
+    "tension_score": 6.4,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-067-skill.md"
+  },
+  "68": {
+    "skill_id": "conflict_escalation-novel-1776261925153-68",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.9,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-068-skill.md"
+  },
+  "69": {
+    "skill_id": "conflict_escalation-novel-1776261925153-69",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.8,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-069-skill.md"
+  },
+  "70": {
+    "skill_id": "daily_transition-novel-1776261925153-70",
+    "scene_type": "daily_transition",
+    "tension_score": 5.0,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-070-skill.md"
+  },
+  "71": {
+    "skill_id": "emotional_climax-novel-1776261925153-71",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.5,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-071-skill.md"
+  },
+  "72": {
+    "skill_id": "emotional_climax-novel-1776261925153-72",
+    "scene_type": "emotional_climax",
+    "tension_score": 5.2,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-072-skill.md"
+  },
+  "73": {
+    "skill_id": "conflict_escalation-novel-1776261925153-73",
+    "scene_type": "conflict_escalation",
+    "tension_score": 6.2,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-073-skill.md"
+  },
+  "74": {
+    "skill_id": "conflict_escalation-novel-1776261925153-74",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.0,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-074-skill.md"
+  },
+  "75": {
+    "skill_id": "emotional_climax-novel-1776261925153-75",
+    "scene_type": "emotional_climax",
+    "tension_score": 6.5,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-075-skill.md"
+  },
+  "76": {
+    "skill_id": "conflict_escalation-novel-1776261925153-76",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.3,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-076-skill.md"
+  },
+  "77": {
+    "skill_id": "emotional_climax-novel-1776261925153-77",
+    "scene_type": "emotional_climax",
+    "tension_score": 5.6,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-077-skill.md"
+  },
+  "78": {
+    "skill_id": "emotional_climax-novel-1776261925153-78",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.7,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-078-skill.md"
+  },
+  "79": {
+    "skill_id": "emotional_climax-novel-1776261925153-79",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.8,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-079-skill.md"
+  },
+  "80": {
+    "skill_id": "emotional_climax-novel-1776261925153-80",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.3,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-080-skill.md"
+  },
+  "81": {
+    "skill_id": "emotional_climax-novel-1776261925153-81",
+    "scene_type": "emotional_climax",
+    "tension_score": 5.5,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-081-skill.md"
+  },
+  "82": {
+    "skill_id": "emotional_climax-novel-1776261925153-82",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.4,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-082-skill.md"
+  },
+  "83": {
+    "skill_id": "conflict_escalation-novel-1776261925153-83",
+    "scene_type": "conflict_escalation",
+    "tension_score": 5.3,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-083-skill.md"
+  },
+  "84": {
+    "skill_id": "emotional_climax-novel-1776261925153-84",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.4,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-084-skill.md"
+  },
+  "85": {
+    "skill_id": "emotional_climax-novel-1776261925153-85",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.0,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-085-skill.md"
+  },
+  "86": {
+    "skill_id": "emotional_climax-novel-1776261925153-86",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.7,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-086-skill.md"
+  },
+  "87": {
+    "skill_id": "conflict_escalation-novel-1776261925153-87",
+    "scene_type": "conflict_escalation",
+    "tension_score": 4.8,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-087-skill.md"
+  },
+  "88": {
+    "skill_id": "emotional_climax-novel-1776261925153-88",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.2,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-088-skill.md"
+  },
+  "89": {
+    "skill_id": "emotional_climax-novel-1776261925153-89",
+    "scene_type": "emotional_climax",
+    "tension_score": 3.1,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-089-skill.md"
+  },
+  "90": {
+    "skill_id": "emotional_climax-novel-1776261925153-90",
+    "scene_type": "emotional_climax",
+    "tension_score": 5.1,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-090-skill.md"
+  },
+  "91": {
+    "skill_id": "emotional_climax-novel-1776261925153-91",
+    "scene_type": "emotional_climax",
+    "tension_score": 4.0,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-091-skill.md"
+  },
+  "92": {
+    "skill_id": "emotional_climax-novel-1776261925153-92",
+    "scene_type": "emotional_climax",
+    "tension_score": 5.0,
+    "confidence": 1.0,
+    "deprecated": false,
+    "filename": "chapter-092-skill.md"
+  }
+}
