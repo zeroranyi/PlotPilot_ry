@@ -1,6 +1,8 @@
 <script setup lang="ts">
 import { NConfigProvider, NMessageProvider, NDialogProvider, zhCN, dateZhCN } from 'naive-ui'
 import type { GlobalThemeOverrides } from 'naive-ui'
+import { useThemeStore } from './stores/themeStore'
+import GlobalLLMFloatingButton from './components/global/GlobalLLMFloatingButton.vue'
 
 const themeOverrides: GlobalThemeOverrides = {
   common: {
@@ -42,6 +44,7 @@ const themeOverrides: GlobalThemeOverrides = {
             <component :is="Component" />
           </transition>
         </router-view>
+        <GlobalLLMFloatingButton />
       </n-dialog-provider>
     </n-message-provider>
   </n-config-provider>
