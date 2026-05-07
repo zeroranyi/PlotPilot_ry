@@ -30,6 +30,29 @@ from application.ai.structured_json_pipeline import (
 )
 
 logger = logging.getLogger(__name__)
+_DEFAULT_MAX_NEW_FORESHADOWS = 2
+_PENDING_FORESHADOW_LIMIT = 20
+
+
+def _foreshadowing_priority(item: Any, current_chapter: int) -> tuple:
+    suggested = getattr(item, "suggested_resolve_chapter", None)
+    planted = getattr(item, "planted_in_chapter", 0) or 0
+    importance = getattr(item, "importance", 0) or 0
+    try:
+        importance_value = int(importance)
+    except (TypeError, ValueError):
+        importance_value = 0
+    overdue = suggested is not None and suggested <= current_chapter
+    distance = abs((suggested or current_chapter) - current_chapter)
+    return (overdue, importance_value, -distance, planted)
+
+
+def _max_new_foreshadows(open_count: int) -> int:
+    if open_count >= 200:
+        return 0
+    if open_count >= 80:
+        return 1
+    return _DEFAULT_MAX_NEW_FORESHADOWS
 
 
 def _extract_json_object(text: str) -> dict:
@@ -94,6 +117,7 @@ async def llm_chapter_extract_bundle(
     chapter_content: str,
     chapter_number: int,
     pending_foreshadows: Optional[List[str]] = None,
+    max_new_foreshadows: int = _DEFAULT_MAX_NEW_FORESHADOWS,
 ) -> dict:
     """一次 LLM 调用：叙事摘要 + 关键事件/埋线 + 人物关系三元组 + 伏笔线索 + 伏笔消费检测 + 故事线进展 + 张力值 + 对话提取（避免多次调用）。
     
@@ -103,6 +127,7 @@ async def llm_chapter_extract_bundle(
         chapter_number: 章节号
         pending_foreshadows: 待回收伏笔描述列表（用于消费检测）
     """
+    max_new_foreshadows = max(0, min(_DEFAULT_MAX_NEW_FORESHADOWS, int(max_new_foreshadows)))
     body = chapter_content.strip()
     if len(body) > 24000:
         body = body[:24000] + "\n\n…（正文过长已截断）"
@@ -110,7 +135,7 @@ async def llm_chapter_extract_bundle(
     # 构建待回收伏笔提示
     foreshadow_context = ""
     if pending_foreshadows:
-        foreshadow_list = "\n".join(f"  - {f}" for f in pending_foreshadows[:15])
+        foreshadow_list = "\n".join(f"  - {f}" for f in pending_foreshadows[:_PENDING_FORESHADOW_LIMIT])
         foreshadow_context = f"""
 【待回收伏笔清单】
 {foreshadow_list}
@@ -132,18 +157,19 @@ async def llm_chapter_extract_bundle(
   "consumed_foreshadows": [ "被回收的伏笔描述1", "被回收的伏笔描述2" ],
   "storyline_progress": [ {{"type": "主线|支线|感情线", "description": "本章该线进展"}} ],
   "dialogues": [ {{"speaker": "角色名", "content": "对话内容", "context": "对话场景"}} ],
-  "timeline_events": [ {{"time_point": "时间描述", "event": "事件摘要", "description": "详细说明"}} ]
+  "timeline_events": [ {{"time_point": "时间描述", "event": "关键转折事件摘要", "description": "详细说明"}} ]
 }}
 约束：
 - relation_triples：只写文中明确出现的关系，最多 8 条；无则 []。
-- foreshadow_hints：潜在伏笔/未解悬念，最多 4 条；无则 []。
+- foreshadow_hints：只记录需要跨章回收的真实悬念，不记录普通细节、气氛描写、一次性疑问；最多 {max_new_foreshadows} 条；无则 []。
+  - 如果本章只是推进/解释已有悬念，优先写入 consumed_foreshadows，不要再把同一悬念写成新伏笔。
   - suggested_resolve_offset：建议在多少章后回收（整数，通常 3-15 章），快节奏短篇用 2-5，长篇用 5-15
   - importance：伏笔重要性，可选 "low"（次要）、"medium"（一般）、"high"（重要）、"critical"（关键）
   - resolve_hint：简短描述预期回收的场景或剧情点（可选，如"下一幕高潮"）
 - consumed_foreshadows：本章回收/呼应的伏笔，从待回收清单中匹配，输出原描述；最多 5 条；无则 []。
 - storyline_progress：本章推进的故事线，最多 5 条；无则 []。
 - dialogues：重要对话（推动剧情/展现性格），最多 10 条；无则 []。
-- timeline_events：本章发生的时间线事件（世界内历法/相对时间），最多 5 条；无则 []。
+- timeline_events：只记录改变人物命运、揭示核心秘密、完成重大转折的关键时间线事件，普通动作、对话推进、气氛描写不要入库；最多 2 条；无则 []。
 - 不要编造 beat 列表；summary/key_events/open_threads 用中文；严格合法 JSON。{foreshadow_context}"""
 
     user = f"第 {chapter_number} 章正文如下：\n\n{body}"
@@ -179,11 +205,11 @@ async def llm_chapter_extract_bundle(
         "key_events": str(data.get("key_events", "")).strip(),
         "open_threads": str(data.get("open_threads", "")).strip(),
         "relation_triples": triples_raw[:8],
-        "foreshadow_hints": hints_raw[:4],
+        "foreshadow_hints": hints_raw[:max_new_foreshadows],
         "consumed_foreshadows": [str(c).strip() for c in consumed_raw[:5] if str(c).strip()],
         "storyline_progress": storyline_raw[:5],
         "dialogues": dialogues_raw[:10],
-        "timeline_events": timeline_raw[:5],
+        "timeline_events": timeline_raw[:2],
     }
 
 
@@ -274,17 +300,21 @@ def persist_bundle_triples_and_foreshadows(
                 except Exception as e:
                     logger.debug("三元组落库跳过: %s", e)
 
-    if foreshadowing_repo and hints:
+    if foreshadowing_repo and (hints or consumed):
         try:
             registry = foreshadowing_repo.get_by_novel_id(NovelId(novel_id))
             if not registry:
-                # 创建新的 ForeshadowingRegistry
                 from domain.novel.entities.foreshadowing_registry import ForeshadowingRegistry
                 registry = ForeshadowingRegistry(
                     id=str(uuid.uuid4()),
                     novel_id=NovelId(novel_id)
                 )
                 logger.info("创建新伏笔账本 novel=%s", novel_id)
+            existing_open = {
+                re.sub(r"\s+", "", f.description.strip().lower())
+                for f in registry.get_unresolved()
+                if getattr(f, "description", "")
+            }
             for h in hints:
                 if not isinstance(h, dict):
                     desc = str(h).strip()
@@ -310,6 +340,10 @@ def persist_bundle_triples_and_foreshadows(
                         resolve_hint = str(resolve_hint).strip()[:100]  # 限制长度
                 if not desc:
                     continue
+                desc_key = re.sub(r"\s+", "", desc.lower())
+                if desc_key in existing_open:
+                    logger.debug("重复未回收伏笔跳过 novel=%s ch=%s: %s", novel_id, chapter_number, desc[:50])
+                    continue
                 try:
                     # 计算预期回收章节 = 埋设章节 + 偏移量
                     suggested_resolve = chapter_number + resolve_offset
@@ -327,6 +361,7 @@ def persist_bundle_triples_and_foreshadows(
                         "伏笔入库 novel=%s ch=%s resolve=%s importance=%s: %s",
                         novel_id, chapter_number, suggested_resolve, importance_val, desc[:50]
                     )
+                    existing_open.add(desc_key)
                 except Exception as e:
                     logger.debug("伏笔入库跳过: %s", e)
             
@@ -680,9 +715,7 @@ def _auto_adjust_storyline_range(
     """自动调整故事线范围：检测新故事线开始或现有故事线结束。"""
     try:
         from domain.novel.value_objects.novel_id import NovelId
-        from domain.novel.value_objects.storyline_type import StorylineType
         from domain.novel.value_objects.storyline_status import StorylineStatus
-        from domain.novel.entities.storyline import Storyline
 
         storylines = storyline_repository.get_by_novel_id(NovelId(novel_id))
 
@@ -726,33 +759,10 @@ def _auto_adjust_storyline_range(
                                novel_id, matched.name, matched.estimated_chapter_end)
 
             elif is_start:
-                # 创建新故事线
-                storyline_type_map = {
-                    "主线": StorylineType.MAIN_PLOT,
-                    "支线": StorylineType.GROWTH,
-                    "感情线": StorylineType.ROMANCE,
-                    "暗线": StorylineType.GROWTH,
-                }
-
-                new_type = StorylineType.GROWTH  # 默认支线
-                for key, stype in storyline_type_map.items():
-                    if key in line_type:
-                        new_type = stype
-                        break
-
-                new_storyline = Storyline(
-                    id=str(uuid.uuid4()),
-                    novel_id=NovelId(novel_id),
-                    storyline_type=new_type,
-                    status=StorylineStatus.ACTIVE,
-                    estimated_chapter_start=chapter_number,
-                    estimated_chapter_end=chapter_number + 10,  # 预估10章
-                    name=line_type,
-                    description=description
+                logger.debug(
+                    "故事线进展未匹配现有故事线，跳过自动创建 novel=%s ch=%s type=%s",
+                    novel_id, chapter_number, line_type
                 )
-                storyline_repository.save(new_storyline)
-                logger.info("自动创建故事线 novel=%s type=%s name=%s start_ch=%d",
-                           novel_id, new_type.value, line_type, chapter_number)
 
     except Exception as e:
         logger.warning("自动调整故事线范围失败 novel=%s ch=%s: %s", novel_id, chapter_number, e)
@@ -972,16 +982,21 @@ async def sync_chapter_narrative_after_save(
 
     # 获取待回收伏笔列表（用于 LLM 消费检测）
     pending_foreshadow_descs: List[str] = []
+    pending_foreshadow_count = 0
     if foreshadowing_repo:
         try:
             registry = foreshadowing_repo.get_by_novel_id(NovelId(novel_id))
             if registry:
-                # 从 Foreshadowing 对象获取描述
-                for f in registry.get_unresolved():
+                pending_items = sorted(
+                    registry.get_unresolved(),
+                    key=lambda f: _foreshadowing_priority(f, chapter_number),
+                    reverse=True,
+                )
+                pending_foreshadow_count = len(pending_items)
+                for f in pending_items[:_PENDING_FORESHADOW_LIMIT]:
                     if f.description:
                         pending_foreshadow_descs.append(f.description)
-                # 从 SubtextLedgerEntry 获取描述
-                for e in registry.get_pending_subtext_entries():
+                for e in registry.get_pending_subtext_entries()[:5]:
                     if e.question:
                         pending_foreshadow_descs.append(e.question)
                 if pending_foreshadow_descs:
@@ -995,7 +1010,8 @@ async def sync_chapter_narrative_after_save(
     try:
         bundle = await llm_chapter_extract_bundle(
             llm_service, content, chapter_number,
-            pending_foreshadows=pending_foreshadow_descs if pending_foreshadow_descs else None
+            pending_foreshadows=pending_foreshadow_descs if pending_foreshadow_descs else None,
+            max_new_foreshadows=_max_new_foreshadows(pending_foreshadow_count),
         )
         summary = bundle.get("summary") or ""
         key_events = bundle.get("key_events") or ""

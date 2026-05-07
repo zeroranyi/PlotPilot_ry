@@ -28,6 +28,14 @@ class SqliteBibleRepository(BibleRepository):
         return datetime.utcnow().isoformat()
 
     def _clear_children(self, conn, novel_id: str) -> None:
+        # 显式清理关系表，避免 FK CASCADE 在某些连接未启用时孤儿累积
+        conn.execute(
+            """
+            DELETE FROM bible_character_relationships
+            WHERE character_id IN (SELECT id FROM bible_characters WHERE novel_id = ?)
+            """,
+            (novel_id,),
+        )
         conn.execute("DELETE FROM bible_style_notes WHERE novel_id = ?", (novel_id,))
         conn.execute("DELETE FROM bible_timeline_notes WHERE novel_id = ?", (novel_id,))
         conn.execute("DELETE FROM bible_locations WHERE novel_id = ?", (novel_id,))

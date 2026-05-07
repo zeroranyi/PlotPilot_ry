@@ -42,6 +42,16 @@ class SqliteChapterRepository(ChapterRepository):
         now = datetime.utcnow().isoformat()
         chapter_id = chapter.id.value if hasattr(chapter.id, 'value') else chapter.id
         novel_id = chapter.novel_id.value if hasattr(chapter.novel_id, 'value') else chapter.novel_id
+        existing = self.db.fetch_one("SELECT 1 AS o FROM chapters WHERE id = ?", (chapter_id,))
+        target = self.db.fetch_one("SELECT target_chapters FROM novels WHERE id = ?", (novel_id,))
+        if not existing and target and target["target_chapters"] and chapter.number > int(target["target_chapters"]):
+            logger.warning(
+                "Skip chapter beyond target: novel=%s number=%s target=%s",
+                novel_id,
+                chapter.number,
+                target["target_chapters"],
+            )
+            return
         status = chapter.status.value if hasattr(chapter.status, 'value') else chapter.status
         self.db.execute(sql, (
             chapter_id,

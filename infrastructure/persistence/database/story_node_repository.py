@@ -28,6 +28,14 @@ class StoryNodeRepository:
         conn = self._get_connection()
         try:
             cursor = conn.cursor()
+            if node.node_type == NodeType.CHAPTER and node.number is not None:
+                cursor.execute("SELECT 1 FROM story_nodes WHERE id = ?", (node.id,))
+                exists = cursor.fetchone()
+                cursor.execute("SELECT target_chapters FROM novels WHERE id = ?", (node.novel_id,))
+                novel = cursor.fetchone()
+                target = novel["target_chapters"] if novel else None
+                if not exists and target and int(node.number) > int(target):
+                    return node
             cursor.execute("""
                 INSERT INTO story_nodes (
                     id, novel_id, parent_id, node_type, number, title, description, order_index,

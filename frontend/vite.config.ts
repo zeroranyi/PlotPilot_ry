@@ -14,6 +14,10 @@ export default defineConfig({
       '@': resolve(__dirname, 'src'),
     },
   },
+  optimizeDeps: {
+    // 排除 Tauri API，因为它在浏览器环境下是可选的
+    exclude: ['@tauri-apps/api'],
+  },
   server: {
     port: 3000,
     host: '127.0.0.1',

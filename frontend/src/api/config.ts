@@ -130,21 +130,25 @@ async function waitForTauriBackendPort(
  */
 export async function initApiClient(): Promise<void> {
   let port: number | null = null
-  try {
-    const { invoke } = await import('@tauri-apps/api/core')
-    const first = await invoke<number>('get_backend_port')
-    if (first > 0) {
-      port = first
-    } else if (isTauri()) {
-      console.log('[API] 等待后端就绪...')
-      port = await waitForTauriBackendPort(
-        cmd => invoke<number>(cmd),
-        TAURI_BACKEND_WAIT_MS,
-        TAURI_BACKEND_POLL_MS,
-      )
+
+  // 只在 Tauri 环境下才尝试导入 @tauri-apps/api（浏览器下走 Vite 代理到 8005）
+  if (isTauri()) {
+    try {
+      const { invoke } = await import('@tauri-apps/api/core')
+      const first = await invoke<number>('get_backend_port')
+      if (first > 0) {
+        port = first
+      } else {
+        console.log('[API] 等待后端就绪...')
+        port = await waitForTauriBackendPort(
+          cmd => invoke<number>(cmd),
+          TAURI_BACKEND_WAIT_MS,
+          TAURI_BACKEND_POLL_MS,
+        )
+      }
+    } catch (e) {
+      console.warn('[API] Tauri IPC 调用失败:', e)
     }
-  } catch (e) {
-    console.warn('[API] Tauri IPC 调用失败:', e)
   }
 
   if (port != null && port > 0) {

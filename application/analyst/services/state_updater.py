@@ -24,6 +24,8 @@ from domain.novel.entities.foreshadowing_registry import ForeshadowingRegistry
 from domain.novel.entities.timeline_registry import TimelineRegistry
 
 logger = logging.getLogger(__name__)
+_MAX_NEW_FORESHADOWS_PER_CHAPTER = 2
+_MAX_OPEN_FORESHADOWS = 200
 
 
 def _normalize_text(value: Any) -> str:
@@ -105,14 +107,23 @@ class StateUpdater:
                 logger.warning(f"Bible not found for novel {novel_id}, skipping character update")
             else:
                 for char_data in chapter_state.new_characters:
+                    name = str(char_data.get("name") or "未知角色").strip()
+                    description = str(char_data.get("description") or "").strip()
+                    existing_character = bible.get_character_by_name(name)
+                    if existing_character:
+                        if description and len(description) > len(existing_character.description or ""):
+                            existing_character.update_description(description)
+                        logger.debug(f"Merged existing character: {name}")
+                        continue
+
                     char_id = CharacterId(str(uuid.uuid4()))
                     character = Character(
                         id=char_id,
-                        name=char_data.get("name", "未知角色"),
-                        description=char_data.get("description", "")
+                        name=name,
+                        description=description
                     )
                     bible.add_character(character)
-                    logger.debug(f"Added character: {char_data.get('name')}")
+                    logger.debug(f"Added character: {name}")
 
                 self.bible_repository.save(bible)
                 logger.info(f"Bible updated: added {len(chapter_state.new_characters)} new characters for novel {novel_id}")
@@ -134,8 +145,12 @@ class StateUpdater:
                     novel_id=novel_id_obj
                 )
 
-            # 添加新伏笔
-            for foreshadow_data in chapter_state.foreshadowing_planted:
+            open_foreshadow_count = len(foreshadowing_registry.get_unresolved())
+            planted_items = chapter_state.foreshadowing_planted[:_MAX_NEW_FORESHADOWS_PER_CHAPTER]
+            if open_foreshadow_count >= _MAX_OPEN_FORESHADOWS:
+                planted_items = []
+
+            for foreshadow_data in planted_items:
                 foreshadowing = Foreshadowing(
                     id=str(uuid.uuid4()),
                     planted_in_chapter=_safe_chapter_int(

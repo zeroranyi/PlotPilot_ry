@@ -2,6 +2,7 @@
 from __future__ import annotations
 
 import logging
+import re
 from typing import List, Optional
 from dataclasses import replace
 
@@ -9,6 +10,13 @@ from domain.shared.base_entity import BaseEntity
 from domain.novel.value_objects.chapter_renumber_spec import ChapterRenumberSpec
 
 logger = logging.getLogger(__name__)
+_MAX_FORESHADOWINGS = 800
+
+
+def _normalize_foreshadowing_description(value: str) -> str:
+    return re.sub(r"\s+", "", str(value or "").strip().lower())
+
+
 from domain.novel.value_objects.novel_id import NovelId
 from domain.novel.value_objects.foreshadowing import (
     Foreshadowing,
@@ -38,7 +46,30 @@ class ForeshadowingRegistry(BaseEntity):
             raise InvalidOperationError(
                 f"Foreshadowing with id '{foreshadowing.id}' already exists"
             )
+        normalized = _normalize_foreshadowing_description(foreshadowing.description)
+        for existing in self._foreshadowings:
+            if existing.status != ForeshadowingStatus.PLANTED:
+                continue
+            existing_norm = _normalize_foreshadowing_description(existing.description)
+            if existing_norm and existing_norm == normalized:
+                raise InvalidOperationError("Duplicate unresolved foreshadowing description")
         self._foreshadowings.append(foreshadowing)
+        self._trim_foreshadowings()
+
+    def _trim_foreshadowings(self) -> None:
+        if len(self._foreshadowings) <= _MAX_FORESHADOWINGS:
+            return
+        keep = sorted(
+            self._foreshadowings,
+            key=lambda f: (
+                f.status != ForeshadowingStatus.PLANTED,
+                int(f.importance),
+                f.planted_in_chapter,
+            ),
+            reverse=True,
+        )[:_MAX_FORESHADOWINGS]
+        keep_ids = {f.id for f in keep}
+        self._foreshadowings = [f for f in self._foreshadowings if f.id in keep_ids]
 
     def mark_resolved(self, foreshadowing_id: str, resolved_in_chapter: int) -> None:
         """标记伏笔为已解决，创建新的不可变对象"""

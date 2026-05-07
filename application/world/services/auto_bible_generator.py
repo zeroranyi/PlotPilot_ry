@@ -294,8 +294,8 @@ class AutoBibleGenerator:
             prepared.append(
                 {
                     "location_id": location_id,
-                    "name": loc_data["name"],
-                    "description": loc_data["description"],
+                    "name": loc_data.get("name", "未命名地点"),
+                    "description": loc_data.get("description", ""),
                     "location_type": loc_data.get("type", "场景"),
                     "connections": loc_data.get("connections", []),
                     "raw_parent_id": loc_data.get("parent_id"),

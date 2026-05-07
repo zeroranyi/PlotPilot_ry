@@ -72,6 +72,15 @@ class Bible(BaseEntity):
                 return character
         return None
 
+    def get_character_by_name(self, name: str) -> Optional[Character]:
+        target = "".join(str(name or "").split())
+        if not target:
+            return None
+        for character in self._characters:
+            if "".join(str(character.name or "").split()) == target:
+                return character
+        return None
+
     def add_world_setting(self, setting: WorldSetting) -> None:
         """添加世界设定"""
         # 检查重复

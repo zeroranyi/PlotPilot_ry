@@ -181,6 +181,30 @@ class TestForeshadowingRegistry:
         assert len(ready_list) == 1
         assert ready_list[0] == ready
 
+    def test_register_duplicate_unresolved_description(self):
+        novel_id = NovelId("novel-123")
+        registry = ForeshadowingRegistry(id="registry-1", novel_id=novel_id)
+        registry.register(
+            Foreshadowing(
+                id="foreshadow-1",
+                planted_in_chapter=1,
+                description="神秘 预言",
+                importance=ImportanceLevel.HIGH,
+                status=ForeshadowingStatus.PLANTED,
+            )
+        )
+
+        with pytest.raises(InvalidOperationError, match="Duplicate unresolved foreshadowing description"):
+            registry.register(
+                Foreshadowing(
+                    id="foreshadow-2",
+                    planted_in_chapter=2,
+                    description="神秘预言",
+                    importance=ImportanceLevel.MEDIUM,
+                    status=ForeshadowingStatus.PLANTED,
+                )
+            )
+
     def test_foreshadowings_returns_copy(self):
         """测试 foreshadowings 属性返回副本"""
         novel_id = NovelId("novel-123")
