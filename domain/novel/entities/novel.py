@@ -62,6 +62,7 @@ class Novel(BaseEntity):
         target_words_per_chapter: int = 2500,
         # 审计进度指示
         audit_progress: Optional[str] = None,
+        autopilot_chapter_prompt_key: str = "",
     ):
         super().__init__(id.value)
         self.novel_id = id
@@ -102,6 +103,7 @@ class Novel(BaseEntity):
         self.target_words_per_chapter = target_words_per_chapter
         # 审计进度指示
         self.audit_progress = audit_progress
+        self.autopilot_chapter_prompt_key = autopilot_chapter_prompt_key
 
     def add_chapter(self, chapter: Chapter) -> None:
         """添加章节（必须连续）"""

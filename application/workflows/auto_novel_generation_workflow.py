@@ -25,6 +25,11 @@ from domain.ai.services.llm_service import LLMService, GenerationConfig
 from domain.ai.value_objects.prompt import Prompt
 from application.ai.llm_output_sanitize import strip_reasoning_artifacts
 from application.workflows.beat_continuation import format_prior_draft_for_prompt
+from infrastructure.ai.lianzi_prompt_adapter import (
+    LIANZI_OFFICIAL_PROMPTS,
+    build_prompt_from_lianzi_node,
+    render_lianzi_prompt_template,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -744,6 +749,10 @@ class AutoNovelGenerationWorkflow:
         beat_target_words: Optional[int] = None,
         voice_anchors: str = "",
         chapter_draft_so_far: str = "",
+        prompt_node_key: str = "",
+        novel_title: str = "",
+        novel_premise: str = "",
+        platform: str = "通用网文",
     ) -> Prompt:
         """构建与 HTTP 单章 / 流式 / 托管按节拍写作一致的 Prompt（对外 API）。"""
         return self._build_prompt(
@@ -758,6 +767,68 @@ class AutoNovelGenerationWorkflow:
             beat_target_words=beat_target_words,
             voice_anchors=voice_anchors,
             chapter_draft_so_far=chapter_draft_so_far,
+            prompt_node_key=prompt_node_key,
+            novel_title=novel_title,
+            novel_premise=novel_premise,
+            platform=platform,
+        )
+
+    def _build_prompt_from_node(
+        self,
+        *,
+        prompt_node_key: str,
+        context: str,
+        outline: str,
+        planning_section: str,
+        voice_block: str,
+        fact_lock: str,
+        beat_prompt: str,
+        beat_index: Optional[int],
+        total_beats: Optional[int],
+        beat_target_words: Optional[int],
+        chapter_draft_so_far: str,
+        novel_title: str,
+        novel_premise: str,
+        platform: str,
+        style_summary: str,
+        storyline_context: str,
+        plot_tension: str,
+    ) -> Optional[Prompt]:
+        core_structure = "\n\n".join(
+            part for part in [planning_section.strip(), storyline_context.strip(), plot_tension.strip()] if part
+        )
+        setting_data = "\n\n".join(
+            part for part in [context.strip(), fact_lock.strip(), voice_block.strip(), style_summary.strip()] if part
+        )
+        variables = {
+            "类型": "通用网文",
+            "发布平台": platform,
+            "基础信息": "\n".join(part for part in [novel_title.strip(), novel_premise.strip()] if part),
+            "核心构架": core_structure,
+            "设定数据": setting_data,
+            "当前设定数据": setting_data,
+            "章纲": outline,
+            "章节大纲": outline,
+            "文风": style_summary,
+            "补充要求": "",
+            "前3章正文": context,
+            "当前卷数": "",
+            "当前章节": str(self._current_chapter_number or ""),
+            "目标字数": str(beat_target_words or 3000),
+            "节拍": beat_prompt,
+            "本章已生成正文": chapter_draft_so_far,
+        }
+        suffix_parts = []
+        if beat_prompt:
+            suffix_parts.append(f"【当前节拍】\n{beat_prompt.strip()}")
+        if chapter_draft_so_far:
+            suffix_parts.append(f"【本章已生成正文】\n{chapter_draft_so_far}")
+        suffix_parts.append("请只输出小说正文，不要输出分析、标题、说明或 Markdown。")
+        return build_prompt_from_lianzi_node(
+            prompt_node_key,
+            variables,
+            fallback_system="你是专业网络小说作者，请严格遵守用户给出的上下文、设定与章纲。",
+            suffix="\n\n".join(suffix_parts),
         )
 
     def _build_prompt(
@@ -774,6 +845,10 @@ class AutoNovelGenerationWorkflow:
         beat_target_words: Optional[int] = None,
         voice_anchors: str = "",
         chapter_draft_so_far: str = "",
+        prompt_node_key: str = "",
+        novel_title: str = "",
+        novel_premise: str = "",
+        platform: str = "通用网文",
     ) -> Prompt:
         """构建 LLM 提示词
 
@@ -856,6 +931,30 @@ class AutoNovelGenerationWorkflow:
                 fact_lock = "\n\n".join(parts) if parts else ""
             except Exception as e:
                 logger.warning(f"MemoryEngine fact_lock 构建失败: {e}")
+
+        chapter_prompt_key = prompt_node_key or LIANZI_OFFICIAL_PROMPTS["chapter_generation"]
+        if chapter_prompt_key:
+            prompt = self._build_prompt_from_node(
+                prompt_node_key=chapter_prompt_key,
+                context=context,
+                outline=outline,
+                planning_section=planning_section,
+                voice_block=voice_block,
+                fact_lock=fact_lock,
+                beat_prompt=beat_prompt or "",
+                beat_index=beat_index,
+                total_beats=total_beats,
+                beat_target_words=beat_target_words,
+                chapter_draft_so_far=prior_in_chapter,
+                novel_title=novel_title,
+                novel_premise=novel_premise,
+                platform=platform,
+                style_summary=ss,
+                storyline_context=sc,
+                plot_tension=pt,
+            )
+            if prompt:
+                return prompt
 
         # ⚡ 提示词集中管理说明：
         # 此模板对应 prompts_defaults.json 中的 id=workflow-chapter-generation

@@ -6,6 +6,7 @@ from application.workflows.auto_novel_generation_workflow import (
     CHAPTER_CONTEXT_LAYER2_HEADER,
     CHAPTER_CONTEXT_LAYER3_HEADER,
     assemble_chapter_bundle_context_text,
+    render_lianzi_prompt_template,
 )
 from application.engine.dtos.generation_result import GenerationResult
 from application.engine.dtos.scene_director_dto import SceneDirectorAnalysis
@@ -111,6 +112,16 @@ def test_assemble_chapter_bundle_context_text_uses_t2_t3_headers():
     assert f"=== {CHAPTER_CONTEXT_LAYER2_HEADER} ===" in s
     assert f"=== {CHAPTER_CONTEXT_LAYER3_HEADER} ===" in s
     assert "L1" in s and "L2" in s and "L3" in s
+
+
+def test_render_lianzi_prompt_template_replaces_known_placeholders_only():
+    rendered = render_lianzi_prompt_template(
+        "类型：@类型\n章纲：@章纲\n未知：@不存在",
+        {"类型": "玄幻", "章纲": "主角出山"},
+    )
+    assert "类型：玄幻" in rendered
+    assert "章纲：主角出山" in rendered
+    assert "未知：@不存在" in rendered
 
 
 class TestGenerateChapter:

@@ -12,6 +12,7 @@ from application.world.services.worldbuilding_service import WorldbuildingServic
 from domain.bible.triple import Triple, SourceType
 from infrastructure.persistence.database.triple_repository import TripleRepository
 from domain.shared.exceptions import EntityNotFoundError
+from infrastructure.ai.lianzi_prompt_adapter import LIANZI_OFFICIAL_PROMPTS, build_prompt_from_lianzi_node
 
 logger = logging.getLogger(__name__)
 
@@ -627,7 +628,21 @@ JSON 格式（不要有其他文字）：
 }}
 ```"""
 
-        bible_data = await self._call_llm_and_parse_with_retry(system_prompt, user_prompt)
+        prompt = build_prompt_from_lianzi_node(
+            LIANZI_OFFICIAL_PROMPTS["worldbuilding"],
+            {
+                "类型": "通用网文",
+                "基础信息": f"故事创意：{premise}\n目标章节数：{target_chapters}章",
+                "核心构架": premise,
+                "补充要求": "请生成完整人物、地点、文风和世界观；只输出可被 json.loads 解析的 JSON，字段必须包含 characters、locations、style、worldbuilding。",
+            },
+            fallback_system=system_prompt,
+            suffix=user_prompt,
+        )
+        if prompt:
+            bible_data = await self._call_llm_and_parse_with_retry(prompt.system, prompt.user)
+        else:
+            bible_data = await self._call_llm_and_parse_with_retry(system_prompt, user_prompt)
         if bible_data:
             return bible_data
 
@@ -906,8 +921,20 @@ JSON 格式：
 }}
 ```"""
 
+        prompt = build_prompt_from_lianzi_node(
+            LIANZI_OFFICIAL_PROMPTS["worldbuilding"],
+            {
+                "类型": "通用网文",
+                "基础信息": f"故事创意：{premise}\n目标章节数：{target_chapters}章",
+                "核心构架": premise,
+                "补充要求": "请只输出可被 json.loads 解析的 JSON，字段必须包含 style 和 worldbuilding。",
+            },
+            fallback_system=system_prompt,
+            suffix=user_prompt,
+        )
+        if prompt:
+            return await self._call_llm_and_parse_with_retry(prompt.system, prompt.user)
         return await self._call_llm_and_parse_with_retry(system_prompt, user_prompt)
-
     async def _generate_characters(self, premise: str, target_chapters: int, worldbuilding: Dict[str, Any]) -> Dict[str, Any]:
         """基于世界观生成人物"""
         wb_summary = self._summarize_worldbuilding(worldbuilding)

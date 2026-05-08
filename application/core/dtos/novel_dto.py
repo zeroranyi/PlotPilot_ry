@@ -83,6 +83,7 @@ class NovelDTO:
     locked_genre: str = ""
     locked_world_preset: str = ""
     target_words_per_chapter: int = 2500
+    autopilot_chapter_prompt_key: str = ""
 
     @classmethod
     def from_domain(cls, novel: 'Novel') -> 'NovelDTO':
@@ -119,4 +120,5 @@ class NovelDTO:
             locked_genre=lg,
             locked_world_preset=lw,
             target_words_per_chapter=int(getattr(novel, "target_words_per_chapter", 2500) or 2500),
+            autopilot_chapter_prompt_key=getattr(novel, "autopilot_chapter_prompt_key", "") or "",
         )

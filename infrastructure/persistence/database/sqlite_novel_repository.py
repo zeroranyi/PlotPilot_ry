@@ -29,10 +29,10 @@ class SqliteNovelRepository(NovelRepository):
                 last_audit_narrative_ok, last_audit_at,
                 last_audit_vector_stored, last_audit_foreshadow_stored,
                 last_audit_triples_extracted, last_audit_quality_scores, last_audit_issues,
-                target_words_per_chapter, audit_progress,
+                target_words_per_chapter, audit_progress, autopilot_chapter_prompt_key,
                 created_at, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
             ON CONFLICT(id) DO UPDATE SET
                 title = excluded.title,
                 slug = excluded.slug,
@@ -61,6 +61,7 @@ class SqliteNovelRepository(NovelRepository):
                 last_audit_issues = excluded.last_audit_issues,
                 target_words_per_chapter = excluded.target_words_per_chapter,
                 audit_progress = excluded.audit_progress,
+                autopilot_chapter_prompt_key = excluded.autopilot_chapter_prompt_key,
                 updated_at = excluded.updated_at
         """
         now = datetime.utcnow().isoformat()
@@ -95,6 +96,7 @@ class SqliteNovelRepository(NovelRepository):
         lai_json = json.dumps(lai) if lai else None
         twpc = getattr(novel, "target_words_per_chapter", 2500)
         audit_progress = getattr(novel, "audit_progress", None)
+        autopilot_chapter_prompt_key = getattr(novel, "autopilot_chapter_prompt_key", "")
 
         self.db.execute(sql, (
             novel_id,
@@ -125,6 +127,7 @@ class SqliteNovelRepository(NovelRepository):
             lai_json,
             twpc,
             audit_progress,
+            autopilot_chapter_prompt_key,
             now,
             now
         ))
@@ -217,6 +220,7 @@ class SqliteNovelRepository(NovelRepository):
             last_audit_issues=lai,
             target_words_per_chapter=row.get("target_words_per_chapter", 2500),
             audit_progress=row.get("audit_progress"),
+            autopilot_chapter_prompt_key=row.get("autopilot_chapter_prompt_key", ""),
         )
 
     def delete(self, novel_id: NovelId) -> None:

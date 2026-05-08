@@ -22,6 +22,7 @@ from infrastructure.persistence.database.chapter_element_repository import Chapt
 from domain.ai.services.llm_service import LLMService, GenerationConfig
 from domain.ai.value_objects.prompt import Prompt
 from application.audit.services.macro_merge_engine import MacroMergeEngine, MergePlan, MergeConflictException
+from infrastructure.ai.lianzi_prompt_adapter import LIANZI_OFFICIAL_PROMPTS, build_prompt_from_lianzi_node
 
 logger = logging.getLogger(__name__)
 _macro_plan_progress_store: Dict[str, Dict] = {}
@@ -1732,6 +1733,48 @@ class ContinuousPlanningService:
     }}
   ]
 }}"""
+        prompt = build_prompt_from_lianzi_node(
+            LIANZI_OFFICIAL_PROMPTS["macro_outline"],
+            {
+                "类型": "通用网文",
+                "目标字数": str(target_chapters),
+                "前3章正文": "",
+                "基础信息": worldview_context,
+                "核心构架": f"目标总篇幅：{target_chapters}章\n推荐结构：{rec_parts}部×{rec_volumes_per_part}卷×{rec_acts_per_volume}幕，每幕约{rec_chapters_per_act}章",
+                "补充要求": "请输出可被 json.loads 解析的 JSON，字段尽量贴合 PlotPilot 的 parts/volumes/acts 结构，不要输出解释文字。",
+            },
+            fallback_system=system_msg,
+            suffix=f"""请严格输出 JSON：
+{{
+  "parts": [
+    {{
+      "title": "部标题",
+      "volumes": [
+        {{
+          "title": "卷标题",
+          "theme": "卷主题",
+          "estimated_chapters": 预估章数,
+          "acts": [
+            {{
+              "title": "幕标题",
+              "core_conflict": "核心冲突",
+              "emotional_turn": "情绪转折",
+              "description": "情节摘要",
+              "estimated_chapters": 预估章数,
+              "key_characters": [],
+              "key_locations": []
+            }}
+          ]
+        }}
+      ]
+    }}
+  ]
+}}
+所有 estimated_chapters 之和必须等于 {target_chapters}，不要添加任何解释性文字。""",
+        )
+        if prompt:
+            return prompt
+
         return Prompt(system=system_msg, user=user_msg)
 
     def _build_precise_macro_prompt(
@@ -1965,6 +2008,21 @@ class ContinuousPlanningService:
 3. Act 必须填写全部幕级字段。
 4. 不要返回 parts/volumes/acts 树，不要添加解释文字。
 5. 幕的 estimated_chapters 可以按剧情轻重分配，但总量应尽量接近 {target_chapters} 章。"""
+        prompt = build_prompt_from_lianzi_node(
+            LIANZI_OFFICIAL_PROMPTS["macro_outline"],
+            {
+                "类型": "通用网文",
+                "目标字数": str(target_chapters),
+                "前3章正文": "",
+                "基础信息": worldview_context,
+                "核心构架": f"{pacing_guide}\n\n{skeleton_block}",
+                "补充要求": "请只输出 node_updates JSON，不要新增、删除、合并、拆分任何节点。",
+            },
+            fallback_system=system_msg,
+            suffix=user_msg,
+        )
+        if prompt:
+            return prompt
         return Prompt(system=system_msg, user=user_msg)
 
     def _build_precise_volume_prompt(
@@ -2056,6 +2114,20 @@ class ContinuousPlanningService:
 2. 当前卷内每个 Act 都必须返回一条更新。
 3. 每个 Act 的 narrative_goal、plot_points、key_characters、key_locations、emotional_arc 都不能为空。
 4. 不要新增或删除节点。"""
+        prompt = build_prompt_from_lianzi_node(
+            LIANZI_OFFICIAL_PROMPTS["volume_outline"],
+            {
+                "类型": "通用网文",
+                "基础信息": "".join(context_parts),
+                "核心构架": chr(10).join(scope_lines),
+                "目标字数": str(target_chapters),
+                "补充要求": "请仅返回当前卷相关 node_updates JSON；当前卷内每个 Act 都必须返回完整字段。",
+            },
+            fallback_system=system_msg,
+            suffix=user_msg,
+        )
+        if prompt:
+            return prompt
         return Prompt(system=system_msg, user=user_msg)
 
     def _build_precise_repair_prompt(
@@ -2195,8 +2267,25 @@ class ContinuousPlanningService:
     }}
   ]
 }}"""
+        prompt = build_prompt_from_lianzi_node(
+            LIANZI_OFFICIAL_PROMPTS["chapter_outline"],
+            {
+                "类型": "通用网文",
+                "基础信息": context,
+                "核心构架": act_node.description or act_node.title,
+                "设定数据": context,
+                "当前设定数据": context,
+                "当前卷数": "",
+                "当前章节": str(chapter_count),
+                "目标字数": str(chapter_count),
+                "补充要求": "请只输出 PlotPilot 可解析的 JSON：{\"chapters\":[{\"number\":1,\"title\":\"\",\"outline\":\"\",\"characters\":[],\"locations\":[]}]}，不要解释。",
+            },
+            fallback_system=system_msg,
+            suffix=user_msg,
+        )
+        if prompt:
+            return prompt
         return Prompt(system=system_msg, user=user_msg)
-
     async def _get_previous_acts_summary(self, act_node: StoryNode) -> Optional[str]:
         """获取前面幕的摘要"""
         return None

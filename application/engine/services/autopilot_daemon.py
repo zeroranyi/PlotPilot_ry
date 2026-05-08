@@ -652,6 +652,9 @@ class AutopilotDaemon:
                         beat_target_words=int(beat.target_words),
                         voice_anchors=voice_anchors,
                         chapter_draft_so_far=chapter_content,
+                        prompt_node_key=getattr(novel, "autopilot_chapter_prompt_key", "") or "",
+                        novel_title=getattr(novel, "title", "") or "",
+                        novel_premise=getattr(novel, "premise", "") or "",
                     )
                     # 字数控制策略：
                     # - prompt 中要求目标的 75%（在 context_builder 中处理）
@@ -709,6 +712,9 @@ class AutopilotDaemon:
                     plot_tension=bundle["plot_tension"],
                     style_summary=bundle["style_summary"],
                     voice_anchors=voice_anchors,
+                    prompt_node_key=getattr(novel, "autopilot_chapter_prompt_key", "") or "",
+                    novel_title=getattr(novel, "title", "") or "",
+                    novel_premise=getattr(novel, "premise", "") or "",
                 )
                 cfg = GenerationConfig(max_tokens=3000, temperature=0.85)
                 beat_content = await self._stream_llm_with_stop_watch(prompt, cfg, novel=novel)

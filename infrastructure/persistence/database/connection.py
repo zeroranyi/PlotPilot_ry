@@ -175,6 +175,9 @@ def _apply_last_chapter_audit_columns(conn: sqlite3.Connection) -> None:
         "audit_progress": (
             "ALTER TABLE novels ADD COLUMN audit_progress TEXT"
         ),
+        "autopilot_chapter_prompt_key": (
+            "ALTER TABLE novels ADD COLUMN autopilot_chapter_prompt_key TEXT DEFAULT ''"
+        ),
     }
     for col, sql in migrations.items():
         if col not in cols:

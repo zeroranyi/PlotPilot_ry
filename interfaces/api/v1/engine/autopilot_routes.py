@@ -124,6 +124,7 @@ def _autopilot_status_zh(status: str) -> str:
 
 class StartRequest(BaseModel):
     max_auto_chapters: Optional[int] = 9999  # 保护上限，默认几乎无限制，由 target_chapters 控制实际完成点
+    chapter_prompt_key: Optional[str] = ""
 
 
 @router.post("/{novel_id}/start")
@@ -136,6 +137,7 @@ async def start_autopilot(novel_id: str, body: StartRequest = StartRequest()):
 
     novel.autopilot_status = AutopilotStatus.RUNNING
     novel.max_auto_chapters = body.max_auto_chapters
+    novel.autopilot_chapter_prompt_key = (body.chapter_prompt_key or "").strip()
     novel.current_auto_chapters = novel.current_auto_chapters or 0
     novel.consecutive_error_count = 0
 
@@ -256,6 +258,7 @@ async def get_autopilot_status(novel_id: str):
         "current_chapter_number": current_chapter_number,
         "needs_review": novel.current_stage.value == "paused_for_review",
         "auto_approve_mode": getattr(novel, "auto_approve_mode", False),
+        "chapter_prompt_key": getattr(novel, "autopilot_chapter_prompt_key", "") or "",
         "last_chapter_audit": last_chapter_audit,
         "audit_progress": getattr(novel, "audit_progress", None),  # 审计进度指示
     }

@@ -433,8 +433,19 @@ class PromptManager:
             VALUES (?, ?, ?, ?, '1.0.0', '', '📦', '#6b7280', 0, '{}', ?, ?)
         """, (tid, name, description, category, now, now))
         conn.commit()
-        return TemplateInfo({"id": tid, "name": name, "description": description,
-                             "category": category, "node_count": 0})
+        return TemplateInfo({
+            "id": tid,
+            "name": name,
+            "description": description,
+            "category": category,
+            "version": "1.0.0",
+            "author": "",
+            "icon": "📦",
+            "color": "#6b7280",
+            "is_builtin": 0,
+            "metadata": "{}",
+            "node_count": 0,
+        })
 
     # ------------------------------------------------------------------
     # 节点 CRUD

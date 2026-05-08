@@ -141,7 +141,20 @@
               style="width: 100%"
             />
           </n-form-item>
-          
+          <n-form-item
+            label="章节生成提示词"
+            feedback="默认推荐炼字工坊「官方-章节续写」；清空后使用 PlotPilot 内置章节生成逻辑。"
+          >
+            <n-select
+              v-model:value="startConfig.chapter_prompt_key"
+              :options="chapterPromptOptions"
+              :loading="loadingPrompts"
+              clearable
+              filterable
+              placeholder="加载后可选择提示词广场模板"
+            />
+          </n-form-item>
+
           <!-- 全自动模式开关 -->
           <n-form-item label="全自动模式">
             <n-space align="center" justify="space-between" style="width: 100%">
@@ -180,6 +193,7 @@ import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useMessage } from 'naive-ui'
 import AutopilotWritingStream from './AutopilotWritingStream.vue'
 import { resolveHttpUrl, subscribeChapterStream } from '../../api/config'
+import { promptPlazaApi } from '../../api/llmControl'
 
 const props = defineProps({ novelId: String })
 const emit = defineEmits(['status-change', 'chapter-content-update', 'chapter-start', 'chapter-chunk'])
@@ -188,12 +202,15 @@ const message = useMessage()
 const status = ref(null)
 const toggling = ref(false)
 const showStartModal = ref(false)
-const startConfig = ref({ 
+const startConfig = ref({
   target_chapters: 100,
   target_words_per_chapter: 2500,
   max_auto_chapters: 120,
-  auto_approve_mode: false
+  auto_approve_mode: false,
+  chapter_prompt_key: null,
 })
+const loadingPrompts = ref(false)
+const chapterPromptOptions = ref([])
 
 // 目标章数（从 status 获取）
 const targetChapters = computed(() => status.value?.target_chapters || 100)
@@ -298,6 +315,29 @@ function formatWords(n) {
 // API 调用（路径须经 resolveHttpUrl，桌面壳下不能用相对 /api）
 const autopilotApiRoot = () => `/api/v1/autopilot/${props.novelId}`
 
+async function loadChapterPrompts() {
+  loadingPrompts.value = true
+  try {
+    const nodes = await promptPlazaApi.listNodes({ category: 'generation' })
+    chapterPromptOptions.value = nodes.map((node) => ({
+      label: `${node.is_builtin ? '内置' : '炼字'}｜${node.name}`,
+      value: node.node_key,
+    }))
+    if (!startConfig.value.chapter_prompt_key) {
+      const recommended = nodes.find((node) => node.node_key === 'lzgf-cmj55agy4000713685lf4wgep')
+        || nodes.find((node) => !node.is_builtin && node.name.includes('章节续写'))
+      if (recommended) {
+        startConfig.value.chapter_prompt_key = recommended.node_key
+      }
+    }
+  } catch (err) {
+    console.warn('[AutopilotPanel] loadChapterPrompts failed:', err)
+    chapterPromptOptions.value = []
+  } finally {
+    loadingPrompts.value = false
+  }
+}
+
 async function fetchStatus() {
   try {
     const res = await fetch(resolveHttpUrl(`${autopilotApiRoot()}/status`))
@@ -354,8 +394,10 @@ function openStartModal() {
     target_chapters: target,
     target_words_per_chapter: wpc,
     max_auto_chapters: target + 20,
-    auto_approve_mode: autoApprove
+    auto_approve_mode: autoApprove,
+    chapter_prompt_key: status.value?.chapter_prompt_key || null,
   }
+  void loadChapterPrompts()
   showStartModal.value = true
 }
 
@@ -421,6 +463,7 @@ async function start() {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
         max_auto_chapters: startConfig.value.max_auto_chapters,
+        chapter_prompt_key: startConfig.value.chapter_prompt_key || '',
       }),
     })
     if (res.ok) {
